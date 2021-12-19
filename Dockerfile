@@ -7,4 +7,4 @@ RUN npm run build
 
 FROM node:16.13.1-alpine
 COPY --from=builder /usr/app/dist /usr/app
-CMD ["npm", "run", "start:prod"]
+CMD ["NODE_ENV=production", "node", "dist/main"]
