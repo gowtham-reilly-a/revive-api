@@ -6,5 +6,5 @@ COPY . .
 RUN npm run build
 
 FROM node:16.13.1-alpine
-COPY --from=builder /app/dist /usr/app
+COPY --from=builder /usr/app/dist /usr/app
 CMD ["npm", "run", "start:prod"]
