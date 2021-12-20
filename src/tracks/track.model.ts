@@ -1,67 +1,72 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose';
+import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
+import { nanoid } from 'src/utils/nanoid';
 
 export type TrackDocument = Track & Document;
 
-@Schema()
+@Schema({
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+  timestamps: true,
+})
 export class Track {
   @Prop({
     type: String,
-    required: true,
-    trim: true,
+    ref: 'Album',
   })
-  title: string;
+  album: string;
 
   @Prop({
-    type: [MongooseSchema.Types.ObjectId],
+    type: [String],
     ref: 'Artist',
   })
-  artists: ObjectId[];
-
-  @Prop({
-    type: Date,
-  })
-  releasedAt: Date;
-
-  @Prop({
-    type: Date,
-    default: Date.now,
-  })
-  createdAt: Date;
-
-  @Prop({
-    type: MongooseSchema.Types.ObjectId,
-    ref: 'Artist',
-  })
-  createdBy: ObjectId;
-
-  @Prop({
-    type: Date,
-  })
-  lastModifiedAt: Date;
-
-  @Prop({
-    type: MongooseSchema.Types.ObjectId,
-    ref: 'Artist',
-  })
-  lastModifiedBy: ObjectId;
-
-  @Prop({
-    type: MongooseSchema.Types.ObjectId,
-    ref: 'Tag',
-  })
-  tag: ObjectId;
+  artists: string[];
 
   @Prop({
     type: Number,
+    required: true,
   })
-  durationMs: number;
+  duration_ms: number;
+
+  @Prop({
+    type: Map,
+    of: String,
+  })
+  external_urls?: {
+    [key: string]: string;
+  };
+
+  @Prop({
+    type: String,
+    default: () => nanoid(),
+  })
+  _id: string;
+
+  @Prop({
+    type: Map,
+    of: String,
+    required: true,
+  })
+  image: { url: string; height: string; width: string };
 
   @Prop({
     type: String,
     required: true,
   })
-  coverImage: string;
+  name: string;
+
+  @Prop({
+    type: String,
+    default: ModelTypeEnum.Track,
+  })
+  type: ModelTypeEnum.Track;
+
+  @Prop({
+    type: String,
+    required: true,
+  })
+  uri: string;
 }
 
 export const TrackSchema = SchemaFactory.createForClass(Track);

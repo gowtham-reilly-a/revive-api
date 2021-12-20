@@ -1,48 +1,88 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose';
+import { Document } from 'mongoose';
+import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
+import { nanoid } from 'src/utils/nanoid';
+import { AlbumTypeEnum } from './enums/album-type.enum';
 
-export type AlbumDocument = Album & Document;
+export type AlbumDocument = Album & Document<Album>;
 
-@Schema()
+@Schema({
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+  timestamps: true,
+})
 export class Album {
-  @Prop({ type: String, required: true, trim: true })
-  name: string;
+  @Prop({
+    type: String,
+    required: true,
+    enum: [
+      AlbumTypeEnum.Album,
+      AlbumTypeEnum.Compilation,
+      AlbumTypeEnum.Single,
+    ],
+  })
+  album_type: AlbumTypeEnum;
+
+  @Prop({
+    type: [String],
+    ref: 'Artist',
+  })
+  artists: string[];
+
+  @Prop({
+    type: Map,
+    of: String,
+  })
+  external_urls?: {
+    [key: string]: string;
+  };
+
+  @Prop({
+    type: String,
+    default: () => nanoid(),
+  })
+  _id: string;
+
+  @Prop({
+    type: Map,
+    of: String,
+    required: true,
+  })
+  image: { url: string; height: string; width: string };
 
   @Prop({
     type: String,
     required: true,
   })
-  coverImage: string;
+  name: string;
 
   @Prop({
-    type: MongooseSchema.Types.ObjectId,
-    ref: 'Artist',
+    type: Date,
     required: true,
   })
-  createdBy: ObjectId;
+  release_date: Date;
 
   @Prop({
-    type: Date,
-    default: Date.now,
-  })
-  releaseDate: Date;
-
-  @Prop({
-    type: Date,
-  })
-  lastModifiedAt: Date;
-
-  @Prop({
-    type: [MongooseSchema.Types.ObjectId],
-    ref: 'Artist',
-  })
-  artists: ObjectId[];
-
-  @Prop({
-    type: [MongooseSchema.Types.ObjectId],
+    type: String,
     ref: 'Track',
   })
-  tracks: ObjectId[];
+  tracks: string[];
+
+  @Prop({
+    type: String,
+    default: ModelTypeEnum.Album,
+  })
+  type: ModelTypeEnum.Album;
+
+  @Prop({
+    type: String,
+    required: true,
+  })
+  uri: string;
 }
 
 export const AlbumSchema = SchemaFactory.createForClass(Album);
+
+AlbumSchema.virtual('total_tracks').get(function () {
+  return this.tracks.length;
+});

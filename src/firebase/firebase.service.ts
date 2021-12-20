@@ -29,7 +29,7 @@ export class FirebaseService {
     return this.app;
   }
 
-  getAuth() {
+  get getAuth() {
     return this.auth;
   }
 

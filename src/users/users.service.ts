@@ -7,8 +7,9 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FirebaseService } from 'src/firebase/firebase.service';
 import { RoleDto } from './dtos/role.dto';
-import { Role } from '../global/enums/role.enum';
+import { RoleEnum } from '../global/enums/role.enum';
 import { UserDocument } from './user.model';
+import { CreateUserDto } from './dtos/create-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -17,14 +18,18 @@ export class UsersService {
     private firebaseService: FirebaseService,
   ) {}
 
+  async create(createUserDto: CreateUserDto) {
+    return this.userModel.create(createUserDto);
+  }
+
   async setUserRole(roleDto: RoleDto) {
     try {
       const { uid, role } = roleDto;
 
-      if (Role.Admin !== role && Role.Artist !== role)
+      if (RoleEnum.Admin !== role && RoleEnum.Artist !== role)
         throw new BadRequestException("Doesn't match to any available roles");
 
-      await this.firebaseService.getAuth().setCustomUserClaims(uid, {
+      await this.firebaseService.getAuth.setCustomUserClaims(uid, {
         role,
       });
 
@@ -38,15 +43,20 @@ export class UsersService {
 
   async findAllUsers() {
     try {
-      return this.firebaseService.getAuth().listUsers();
+      return this.firebaseService.getAuth.listUsers();
     } catch (err) {
       throw new InternalServerErrorException(err.message);
     }
   }
 
-  async findUserByUID(uid: string) {
+  async findByUID(uid: string) {
     try {
-      return this.firebaseService.getAuth().getUser(uid);
+      const [dbUserData, firebaseUserData] = await Promise.all([
+        this.userModel.findOne({ uid }),
+        this.firebaseService.getAuth.getUser(uid),
+      ]);
+
+      return { ...dbUserData, ...firebaseUserData };
     } catch (err) {
       throw new BadRequestException(err.message);
     }
