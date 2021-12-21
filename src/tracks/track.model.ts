@@ -1,5 +1,5 @@
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
-import { Document, Schema as MongooseSchema, ObjectId } from 'mongoose';
+import { Document } from 'mongoose';
 import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
 import { nanoid } from 'src/utils/nanoid';
 
@@ -44,11 +44,10 @@ export class Track {
   _id: string;
 
   @Prop({
-    type: Map,
-    of: String,
+    type: String,
     required: true,
   })
-  image: { url: string; height: string; width: string };
+  image: string;
 
   @Prop({
     type: String,

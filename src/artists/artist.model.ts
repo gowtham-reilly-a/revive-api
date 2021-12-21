@@ -1,6 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
+import { nanoid } from 'src/utils/nanoid';
 
 export type ArtistDocument = Artist & Document;
 
@@ -11,12 +12,6 @@ export type ArtistDocument = Artist & Document;
 })
 export class Artist {
   @Prop({
-    type: String,
-    required: true,
-  })
-  email: string;
-
-  @Prop({
     type: Map,
     of: String,
   })
@@ -26,16 +21,15 @@ export class Artist {
 
   @Prop({
     type: String,
-    required: true,
+    default: () => nanoid(),
   })
   _id: string;
 
   @Prop({
-    type: Map,
-    of: String,
+    type: String,
     required: true,
   })
-  image: { url: string; height: string; width: string };
+  image: string;
 
   @Prop({
     type: String,

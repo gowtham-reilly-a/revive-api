@@ -9,7 +9,8 @@ import { FirebaseService } from 'src/firebase/firebase.service';
 import { RoleDto } from './dtos/role.dto';
 import { RoleEnum } from '../global/enums/role.enum';
 import { UserDocument } from './user.model';
-import { CreateUserDto } from './dtos/create-user.dto';
+import { DecodedIdToken } from 'firebase-admin/auth';
+import { CreateUserFirebaseDto } from './dtos/create-user-firebase.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,8 +19,27 @@ export class UsersService {
     private firebaseService: FirebaseService,
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
-    return this.userModel.create(createUserDto);
+  async patch(currentUser: DecodedIdToken) {
+    try {
+      const existingUser = await this.userModel.findById(currentUser.uid);
+      if (existingUser) throw new BadRequestException('User already exist');
+
+      return this.userModel.create({
+        _id: currentUser.uid,
+        email: currentUser.email,
+      });
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async createWithFirebase(createUserDto: CreateUserFirebaseDto) {
+    try {
+      const user = await this.firebaseService.getAuth.createUser(createUserDto);
+      return this.userModel.create({ _id: user.uid, email: user.email });
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
   }
 
   async setUserRole(roleDto: RoleDto) {

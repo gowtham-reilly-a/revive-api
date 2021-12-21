@@ -1,7 +1,18 @@
+import { Expose } from 'class-transformer';
+
 export class UserDto {
-  displayName?: string;
+  @Expose()
+  display_name: string;
 
-  email?: string;
+  @Expose()
+  email: string;
 
-  uid: string;
+  @Expose()
+  id: string;
+
+  @Expose()
+  product: string;
+
+  @Expose()
+  type: string;
 }

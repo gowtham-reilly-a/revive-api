@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
-import { UserRecord } from 'firebase-admin/auth';
+import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { DecodedIdToken, UserRecord } from 'firebase-admin/auth';
 import { Serialize } from 'src/global/interceptors/serialize.interceptor';
 import { CurrentUser } from '../global/decorators/current-user.decorator';
 import { Roles } from '../global/decorators/roles.decorator';
 import { RoleEnum } from '../global/enums/role.enum';
+import { CreateUserFirebaseDto } from './dtos/create-user-firebase.dto';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { RoleDto } from './dtos/role.dto';
 import { UserDto } from './dtos/user.dto';
@@ -13,9 +14,16 @@ import { UsersService } from './users.service';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
+  @Serialize(UserDto)
+  @Patch()
+  patchUser(@CurrentUser() currentUser: DecodedIdToken) {
+    return this.usersService.patch(currentUser);
+  }
+
+  @Serialize(UserDto)
   @Post()
-  createUser(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  createUser(@Body() createUserDto: CreateUserFirebaseDto) {
+    return this.usersService.createWithFirebase(createUserDto);
   }
 
   @Get('/:uid')

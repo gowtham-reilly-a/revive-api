@@ -5,18 +5,28 @@ import { ProductEnum } from 'src/global/enums/product.enum';
 
 export type UserDocument = User & Document;
 
-@Schema()
+@Schema({
+  toJSON: { virtuals: true },
+  toObject: { virtuals: true },
+  timestamps: true,
+})
 export class User {
   @Prop({
     type: String,
   })
-  display_name: string;
+  display_name?: string;
 
   @Prop({
     type: String,
     required: true,
   })
   email: string;
+
+  @Prop({
+    type: String,
+    required: true,
+  })
+  _id: string;
 
   @Prop({
     type: String,
@@ -29,12 +39,6 @@ export class User {
     default: ModelTypeEnum.User,
   })
   type: ModelTypeEnum.User;
-
-  @Prop({
-    type: String,
-    required: true,
-  })
-  uid: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

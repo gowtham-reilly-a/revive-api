@@ -44,11 +44,10 @@ export class Album {
   _id: string;
 
   @Prop({
-    type: Map,
-    of: String,
+    type: String,
     required: true,
   })
-  image: { url: string; height: string; width: string };
+  image: string;
 
   @Prop({
     type: String,
