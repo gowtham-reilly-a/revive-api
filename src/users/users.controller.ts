@@ -1,51 +1,67 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
-import { DecodedIdToken, UserRecord } from 'firebase-admin/auth';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
+import { DecodedIdToken } from 'firebase-admin/auth';
 import { Serialize } from 'src/global/interceptors/serialize.interceptor';
 import { CurrentUser } from '../global/decorators/current-user.decorator';
 import { Roles } from '../global/decorators/roles.decorator';
 import { RoleEnum } from '../global/enums/role.enum';
-import { CreateUserFirebaseDto } from './dtos/create-user-firebase.dto';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { RoleDto } from './dtos/role.dto';
+import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserDto } from './dtos/user.dto';
 import { UsersService } from './users.service';
 
+@Serialize(UserDto)
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @Serialize(UserDto)
-  @Patch()
-  patchUser(@CurrentUser() currentUser: DecodedIdToken) {
-    return this.usersService.patch(currentUser);
-  }
-
-  @Serialize(UserDto)
   @Post()
-  createUser(@Body() createUserDto: CreateUserFirebaseDto) {
-    return this.usersService.createWithFirebase(createUserDto);
+  createUser(@Body() createUserDto: CreateUserDto) {
+    return this.usersService.createUser(createUserDto);
   }
 
-  @Get('/:uid')
-  @Serialize(UserDto)
-  getUser(@Param('uid') uid: string) {
-    return this.usersService.findByUID(uid);
+  @Get('/:id')
+  getUser(@Param('id') id: string) {
+    return this.usersService.getUser(id);
   }
 
   @Get()
-  @Serialize(UserDto)
-  getServeralUsers() {
-    return this.usersService.findAllUsers();
+  getSeveralUsers(@Query('ids') query: string) {
+    return this.usersService.getSeveralUsers(query);
   }
 
-  @Get('/me')
-  whoAmI(@CurrentUser() user: UserRecord) {
-    return user;
+  @Patch('/:id')
+  updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.updateUser(id, updateUserDto);
+  }
+
+  @Delete('/:id')
+  deleteUser(@Param('id') id: string) {
+    return this.usersService.deleteUser(id);
+  }
+
+  @Delete()
+  deleteSeveralUsers(@Query('ids') query: string) {
+    return this.usersService.deleteSeveralUsers(query);
   }
 
   @Post('/roles')
   @Roles(RoleEnum.Admin)
   setUserRole(@Body() roleDto: RoleDto) {
     return this.usersService.setUserRole(roleDto);
+  }
+
+  @Patch()
+  patchUser(@CurrentUser() currentUser: DecodedIdToken) {
+    return this.usersService.patch(currentUser);
   }
 }

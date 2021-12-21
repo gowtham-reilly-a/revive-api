@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FirebaseService } from 'src/firebase/firebase.service';
@@ -10,7 +6,8 @@ import { RoleDto } from './dtos/role.dto';
 import { RoleEnum } from '../global/enums/role.enum';
 import { UserDocument } from './user.model';
 import { DecodedIdToken } from 'firebase-admin/auth';
-import { CreateUserFirebaseDto } from './dtos/create-user-firebase.dto';
+import { CreateUserDto } from './dtos/create-user.dto';
+import { UpdateUserDto } from './dtos/update-user.dto';
 
 @Injectable()
 export class UsersService {
@@ -19,24 +16,79 @@ export class UsersService {
     private firebaseService: FirebaseService,
   ) {}
 
-  async patch(currentUser: DecodedIdToken) {
+  async createUser(createUserDto: CreateUserDto) {
     try {
-      const existingUser = await this.userModel.findById(currentUser.uid);
-      if (existingUser) throw new BadRequestException('User already exist');
-
-      return this.userModel.create({
-        _id: currentUser.uid,
-        email: currentUser.email,
-      });
+      const user = await this.firebaseService.getAuth.createUser(createUserDto);
+      return this.userModel.create({ _id: user.uid, email: user.email });
     } catch (err) {
       throw new BadRequestException(err.message);
     }
   }
 
-  async createWithFirebase(createUserDto: CreateUserFirebaseDto) {
+  async getUser(id: string) {
     try {
-      const user = await this.firebaseService.getAuth.createUser(createUserDto);
-      return this.userModel.create({ _id: user.uid, email: user.email });
+      return this.userModel.findById(id);
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async getUserByEmail(email: string) {
+    try {
+      return this.userModel.findOne({ email });
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async getSeveralUsers(query: string) {
+    try {
+      const ids = query.split(',');
+
+      if (ids.length > 50)
+        throw new BadRequestException('The app has exceeded its rate limits.');
+
+      return this.userModel.find().where('_id').in(ids).exec();
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async updateUser(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      return this.userModel.findByIdAndUpdate(id, updateUserDto, { new: true });
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async updateUserEmail(id: string, email: string) {
+    try {
+      await this.firebaseService.getAuth.updateUser(id, { email });
+      return this.userModel.findByIdAndUpdate(id, { email }, { new: true });
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async deleteUser(id: string) {
+    try {
+      await this.firebaseService.getAuth.deleteUser(id);
+      return this.userModel.findByIdAndDelete(id);
+    } catch (err) {
+      throw new BadRequestException(err.message);
+    }
+  }
+
+  async deleteSeveralUsers(query: string) {
+    try {
+      const ids = query.split(',');
+
+      if (ids.length > 50)
+        throw new BadRequestException('The app has exceeded its rate limits.');
+
+      await this.firebaseService.getAuth.deleteUsers(ids);
+      return this.userModel.findByIdAndDelete().in(ids).exec();
     } catch (err) {
       throw new BadRequestException(err.message);
     }
@@ -61,22 +113,15 @@ export class UsersService {
     }
   }
 
-  async findAllUsers() {
+  async patch(currentUser: DecodedIdToken) {
     try {
-      return this.firebaseService.getAuth.listUsers();
-    } catch (err) {
-      throw new InternalServerErrorException(err.message);
-    }
-  }
+      const existingUser = await this.userModel.findById(currentUser.uid);
+      if (existingUser) throw new BadRequestException('User already exist');
 
-  async findByUID(uid: string) {
-    try {
-      const [dbUserData, firebaseUserData] = await Promise.all([
-        this.userModel.findOne({ uid }),
-        this.firebaseService.getAuth.getUser(uid),
-      ]);
-
-      return { ...dbUserData, ...firebaseUserData };
+      return this.userModel.create({
+        _id: currentUser.uid,
+        email: currentUser.email,
+      });
     } catch (err) {
       throw new BadRequestException(err.message);
     }
