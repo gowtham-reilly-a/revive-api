@@ -1,16 +1,27 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { UserDocument } from './user.model';
+import { User, UserDocument } from './user.model';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
+import {
+  CaslAbilityFactory,
+  ActionEnum,
+  SubjectEnum,
+} from 'src/casl/casl-ability.factory';
+import { subject } from '@casl/ability';
 
 @Injectable()
 export class UsersService {
   constructor(
-    @InjectModel('User') private userModel: Model<UserDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private firebaseService: FirebaseService,
+    private caslAbilityFactory: CaslAbilityFactory,
   ) {}
 
   async createUser(createUserDto: CreateUserDto) {
@@ -22,9 +33,22 @@ export class UsersService {
     }
   }
 
-  async getUser(id: string) {
+  async getUser(currentUser: UserDocument | null, id: string) {
     try {
-      return this.userModel.findById(id);
+      const user = await this.userModel.findById(id);
+      if (!user) throw new NotFoundException('User not found');
+
+      if (currentUser === null) return user;
+
+      const ability = this.caslAbilityFactory.getAblility([
+        {
+          action: 'read',
+          subject: 'User',
+        },
+      ]);
+      console.log('*****ABILITY*****', ability.can(ActionEnum.Read, user));
+
+      return user;
     } catch (err) {
       throw new BadRequestException(err.message);
     }

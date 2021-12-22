@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { AlbumDocument, AlbumSchema } from './album.model';
+import { Album, AlbumDocument, AlbumSchema } from './album.model';
 import { AlbumsController } from './albums.controller';
 import { AlbumsService } from './albums.service';
 
@@ -10,7 +10,7 @@ import { AlbumsService } from './albums.service';
     MongooseModule.forFeatureAsync([
       {
         inject: [ConfigService],
-        name: 'Album',
+        name: Album.name,
         useFactory(configService: ConfigService) {
           const schema = AlbumSchema;
           const appRootURL = configService.get<string>('APP_ROOT_URL');

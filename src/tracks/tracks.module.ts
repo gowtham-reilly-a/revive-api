@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { TrackDocument, TrackSchema } from './track.model';
+import { Track, TrackDocument, TrackSchema } from './track.model';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
 
@@ -10,7 +10,7 @@ import { TracksService } from './tracks.service';
     MongooseModule.forFeatureAsync([
       {
         inject: [ConfigService],
-        name: 'Track',
+        name: Track.name,
         useFactory(configService: ConfigService) {
           const schema = TrackSchema;
           const appRootURL = configService.get<string>('APP_ROOT_URL');

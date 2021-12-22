@@ -1,11 +1,20 @@
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  forwardRef,
+  Inject,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { Strategy, ExtractJwt } from 'passport-firebase-jwt';
 import { FirebaseService } from './firebase.service';
+import { UsersService } from 'src/users/users.service';
 
 @Injectable()
 export class FirebaseAuthStrategy extends PassportStrategy(Strategy) {
-  constructor(private firebaseService: FirebaseService) {
+  constructor(
+    private firebaseService: FirebaseService,
+    @Inject(forwardRef(() => UsersService)) private usersService: UsersService,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
     });
@@ -17,13 +26,8 @@ export class FirebaseAuthStrategy extends PassportStrategy(Strategy) {
         true,
       );
 
-      if (!decodedIdToken) {
-        throw new UnauthorizedException();
-      }
-
-      return decodedIdToken;
+      return this.usersService.getUser(null, decodedIdToken.uid);
     } catch (err) {
-      console.log(err);
       throw new UnauthorizedException(err.message);
     }
   }

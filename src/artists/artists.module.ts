@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ArtistDocument, ArtistSchema } from './artist.model';
+import { Artist, ArtistDocument, ArtistSchema } from './artist.model';
 import { ArtistsController } from './artists.controller';
 import { ArtistsService } from './artists.service';
 
@@ -10,7 +10,7 @@ import { ArtistsService } from './artists.service';
     MongooseModule.forFeatureAsync([
       {
         inject: [ConfigService],
-        name: 'Artist',
+        name: Artist.name,
         useFactory(configService: ConfigService) {
           const schema = ArtistSchema;
           const appRootURL = configService.get<string>('APP_ROOT_URL');

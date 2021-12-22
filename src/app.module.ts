@@ -11,6 +11,7 @@ import { FirebaseModule } from './firebase/firebase.module';
 import { ArtistsModule } from './artists/artists.module';
 import { AlbumsModule } from './albums/albums.module';
 import { TracksModule } from './tracks/tracks.module';
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { TracksModule } from './tracks/tracks.module';
       },
     }),
     PassportModule,
+    CaslModule,
     UsersModule,
     FirebaseModule,
     ArtistsModule,

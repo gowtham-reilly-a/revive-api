@@ -8,10 +8,12 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { CurrentUser } from 'src/global/decorators/current-user.decorator';
 import { Serialize } from 'src/global/interceptors/serialize.interceptor';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { UserDto } from './dtos/user.dto';
+import { UserDocument } from './user.model';
 import { UsersService } from './users.service';
 
 @Serialize(UserDto)
@@ -25,8 +27,8 @@ export class UsersController {
   }
 
   @Get(':id')
-  getUser(@Param('id') id: string) {
-    return this.usersService.getUser(id);
+  getUser(@Param('id') id: string, @CurrentUser() currentUser: UserDocument) {
+    return this.usersService.getUser(currentUser, id);
   }
 
   @Get()
