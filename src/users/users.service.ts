@@ -2,10 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { FirebaseService } from 'src/firebase/firebase.service';
-import { RoleDto } from './dtos/role.dto';
-import { RoleEnum } from '../global/enums/role.enum';
 import { UserDocument } from './user.model';
-import { DecodedIdToken } from 'firebase-admin/auth';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 
@@ -89,39 +86,6 @@ export class UsersService {
 
       await this.firebaseService.getAuth.deleteUsers(ids);
       return this.userModel.findByIdAndDelete().in(ids).exec();
-    } catch (err) {
-      throw new BadRequestException(err.message);
-    }
-  }
-
-  async setUserRole(roleDto: RoleDto) {
-    try {
-      const { uid, role } = roleDto;
-
-      if (RoleEnum.Admin !== role && RoleEnum.Artist !== role)
-        throw new BadRequestException("Doesn't match to any available roles");
-
-      await this.firebaseService.getAuth.setCustomUserClaims(uid, {
-        role,
-      });
-
-      return {
-        message: 'Success',
-      };
-    } catch (err) {
-      throw new BadRequestException(err.message);
-    }
-  }
-
-  async patch(currentUser: DecodedIdToken) {
-    try {
-      const existingUser = await this.userModel.findById(currentUser.uid);
-      if (existingUser) throw new BadRequestException('User already exist');
-
-      return this.userModel.create({
-        _id: currentUser.uid,
-        email: currentUser.email,
-      });
     } catch (err) {
       throw new BadRequestException(err.message);
     }
