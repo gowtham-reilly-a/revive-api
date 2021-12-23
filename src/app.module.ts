@@ -12,6 +12,7 @@ import { ArtistsModule } from './artists/artists.module';
 import { AlbumsModule } from './albums/albums.module';
 import { TracksModule } from './tracks/tracks.module';
 import { CaslModule } from './casl/casl.module';
+import { PermissionsModule } from './permissions/permissions.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { CaslModule } from './casl/casl.module';
     ArtistsModule,
     AlbumsModule,
     TracksModule,
+    PermissionsModule,
   ],
   controllers: [AppController],
   providers: [

@@ -2,7 +2,7 @@ import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
 import { ProductEnum } from 'src/global/enums/product.enum';
-import { Rule, RuleSchema } from './rule.model';
+import { Rule, RuleSchema } from 'src/permissions/rule.model';
 
 export type UserDocument = User & Document;
 

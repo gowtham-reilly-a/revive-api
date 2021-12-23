@@ -1,5 +1,5 @@
 import { Expose } from 'class-transformer';
-import { Rule } from '../rule.model';
+import { Rule } from 'src/permissions/rule.model';
 
 export class UserDto {
   @Expose({
