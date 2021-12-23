@@ -9,12 +9,9 @@ import { FirebaseService } from 'src/firebase/firebase.service';
 import { User, UserDocument } from './user.model';
 import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
-import {
-  CaslAbilityFactory,
-  ActionEnum,
-  SubjectEnum,
-} from 'src/casl/casl-ability.factory';
-import { subject } from '@casl/ability';
+import { CaslAbilityFactory } from 'src/casl/casl-ability.factory';
+import { ActionEnum } from 'src/global/enums/action.enum';
+import { SubjectEnum } from 'src/global/enums/subject.enum';
 
 @Injectable()
 export class UsersService {

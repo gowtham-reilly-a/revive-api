@@ -2,6 +2,7 @@ import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
 import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
 import { ProductEnum } from 'src/global/enums/product.enum';
+import { Rule, RuleSchema } from './rule.model';
 
 export type UserDocument = User & Document;
 
@@ -11,6 +12,13 @@ export type UserDocument = User & Document;
   timestamps: true,
 })
 export class User {
+  @Prop({
+    type: [String],
+    ref: 'Artist',
+    select: false,
+  })
+  artist_teams: string[];
+
   @Prop({
     type: String,
   })
@@ -31,8 +39,15 @@ export class User {
   @Prop({
     type: String,
     default: ProductEnum.Free,
+    enum: Object.values(ProductEnum),
   })
   product: ProductEnum;
+
+  @Prop({
+    type: [RuleSchema],
+    select: false,
+  })
+  rules: Rule[];
 
   @Prop({
     type: String,

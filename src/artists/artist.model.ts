@@ -12,6 +12,12 @@ export type ArtistDocument = Artist & Document;
 })
 export class Artist {
   @Prop({
+    type: String,
+    ref: 'User',
+  })
+  belongs_to: string;
+
+  @Prop({
     type: Map,
     of: String,
   })
@@ -36,6 +42,13 @@ export class Artist {
     required: true,
   })
   name: string;
+
+  @Prop({
+    type: String,
+    ref: 'User',
+    select: false,
+  })
+  team: string[];
 
   @Prop({
     type: String,
