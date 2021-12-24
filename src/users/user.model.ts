@@ -1,10 +1,13 @@
+import { RawRuleOf } from '@casl/ability';
+import { AccessibleModel, AccessibleFieldsDocument } from '@casl/mongoose';
 import { Schema, Prop, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
+import { Schema as MongooseSchema } from 'mongoose';
+import { AppAbility } from 'src/casl/casl-ability.factory';
 import { ModelTypeEnum } from 'src/global/enums/model-type.enum';
 import { ProductEnum } from 'src/global/enums/product.enum';
-import { Rule, RuleSchema } from 'src/permissions/rule.model';
 
-export type UserDocument = User & Document;
+export type UserDocument = User &
+  AccessibleModel<User & AccessibleFieldsDocument>;
 
 @Schema({
   toJSON: { virtuals: true },
@@ -37,17 +40,17 @@ export class User {
   _id: string;
 
   @Prop({
+    type: MongooseSchema.Types.ObjectId,
+    ref: 'Permission',
+  })
+  permission: { name: string; rules: RawRuleOf<AppAbility>[] };
+
+  @Prop({
     type: String,
     default: ProductEnum.Free,
     enum: Object.values(ProductEnum),
   })
   product: ProductEnum;
-
-  @Prop({
-    type: [RuleSchema],
-    select: false,
-  })
-  rules: Rule[];
 
   @Prop({
     type: String,

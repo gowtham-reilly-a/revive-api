@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CaslModule } from 'src/casl/casl.module';
 import { Artist, ArtistDocument, ArtistSchema } from './artist.model';
 import { ArtistsController } from './artists.controller';
 import { ArtistsService } from './artists.service';
@@ -30,6 +31,7 @@ import { ArtistsService } from './artists.service';
         },
       },
     ]),
+    CaslModule,
   ],
   controllers: [ArtistsController],
   providers: [ArtistsService],

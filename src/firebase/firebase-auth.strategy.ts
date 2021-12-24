@@ -26,7 +26,7 @@ export class FirebaseAuthStrategy extends PassportStrategy(Strategy) {
         true,
       );
 
-      return this.usersService.getUser(null, decodedIdToken.uid);
+      return this.usersService.getCurrentUser(decodedIdToken.uid);
     } catch (err) {
       throw new UnauthorizedException(err.message);
     }

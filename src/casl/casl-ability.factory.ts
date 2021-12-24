@@ -4,6 +4,7 @@ import { AlbumDocument } from 'src/albums/album.model';
 import { ArtistDocument } from 'src/artists/artist.model';
 import { TrackDocument } from 'src/tracks/track.model';
 import { UserDocument } from 'src/users/user.model';
+import { PermissionDocument } from 'src/permissions/permission.model';
 
 export type Action = 'manage' | 'read' | 'create' | 'update' | 'delete';
 export type Subjects =
@@ -13,6 +14,8 @@ export type Subjects =
   | AlbumDocument
   | 'Artist'
   | ArtistDocument
+  | 'Permission'
+  | PermissionDocument
   | 'Track'
   | TrackDocument
   | 'all';

@@ -11,7 +11,6 @@ import { CreateUserDto } from './dtos/create-user.dto';
 import { UpdateUserDto } from './dtos/update-user.dto';
 import { CaslAbilityFactory } from 'src/casl/casl-ability.factory';
 import { ActionEnum } from 'src/global/enums/action.enum';
-import { SubjectEnum } from 'src/global/enums/subject.enum';
 
 @Injectable()
 export class UsersService {
@@ -30,20 +29,18 @@ export class UsersService {
     }
   }
 
-  async getUser(currentUser: UserDocument | null, id: string) {
+  async getCurrentUser(id: string) {
+    const user = await this.userModel.findById(id).populate('permission');
+
+    console.log(user);
+
+    return user;
+  }
+
+  async getUser(currentUser: UserDocument, id: string) {
     try {
       const user = await this.userModel.findById(id);
       if (!user) throw new NotFoundException('User not found');
-
-      if (currentUser === null) return user;
-
-      const ability = this.caslAbilityFactory.getAblility([
-        {
-          action: 'read',
-          subject: 'User',
-        },
-      ]);
-      console.log('*****ABILITY*****', ability.can(ActionEnum.Read, user));
 
       return user;
     } catch (err) {

@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
+import {
+  accessibleRecordsPlugin,
+  accessibleFieldsPlugin,
+} from '@casl/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -25,7 +29,13 @@ import { PermissionsModule } from './permissions/permissions.module';
       inject: [ConfigService],
       useFactory(configService: ConfigService) {
         return {
-          uri: configService.get('DB'),
+          uri: configService.get('MONGO_DB'),
+          connectionFactory: (connection) => {
+            connection.plugin(accessibleRecordsPlugin);
+            connection.plugin(accessibleFieldsPlugin);
+
+            return connection;
+          },
         };
       },
     }),

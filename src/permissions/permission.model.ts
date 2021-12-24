@@ -1,8 +1,11 @@
+import { RawRuleOf } from '@casl/ability';
+import { AccessibleFieldsDocument, AccessibleModel } from '@casl/mongoose';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-import { Rule, RuleSchema } from './rule.model';
+import { AppAbility } from 'src/casl/casl-ability.factory';
+import { RuleSchema } from './rule.model';
 
-export type PermissionDocument = Permission & Document<Permission>;
+export type PermissionDocument = Permission &
+  AccessibleModel<Permission & AccessibleFieldsDocument>;
 
 @Schema({
   timestamps: true,
@@ -11,13 +14,16 @@ export class Permission {
   @Prop({
     type: String,
     required: true,
+    unique: true,
+    trim: true,
+    lowercase: true,
   })
   name: string;
 
   @Prop({
     type: [RuleSchema],
   })
-  rules: Rule[];
+  rules: RawRuleOf<AppAbility>[];
 }
 
 export const PermissionSchema = SchemaFactory.createForClass(Permission);

@@ -21,6 +21,7 @@ export class Rule {
 
   @Prop({
     type: [String],
+    default: undefined,
   })
   fields?: string[];
 
