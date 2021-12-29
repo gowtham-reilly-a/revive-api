@@ -31,9 +31,6 @@ export class UsersService {
 
   async getCurrentUser(id: string) {
     const user = await this.userModel.findById(id).populate('permission');
-
-    console.log(user);
-
     return user;
   }
 

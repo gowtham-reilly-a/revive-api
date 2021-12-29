@@ -1,6 +1,10 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CaslModule } from 'src/casl/casl.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { AlbumArtistsController } from './album-artists.controller';
+import { AlbumTracksController } from './album-tracks.controller';
 import { Album, AlbumDocument, AlbumSchema } from './album.model';
 import { AlbumsController } from './albums.controller';
 import { AlbumsService } from './albums.service';
@@ -13,16 +17,10 @@ import { AlbumsService } from './albums.service';
         name: Album.name,
         useFactory(configService: ConfigService) {
           const schema = AlbumSchema;
-          const appRootURL = configService.get<string>('APP_ROOT_URL');
           const appName = configService.get<string>('APP_NAME').toLowerCase();
 
           schema.pre('save', function (this: AlbumDocument, next) {
             this.uri = `${appName}:album:${this.id}`;
-            this.set(
-              `external_urls.${appName}`,
-              `${appRootURL}/album/${this.id}`,
-            );
-
             next();
           });
 
@@ -30,8 +28,14 @@ import { AlbumsService } from './albums.service';
         },
       },
     ]),
+    CaslModule,
+    CloudinaryModule,
   ],
-  controllers: [AlbumsController],
+  controllers: [
+    AlbumsController,
+    AlbumTracksController,
+    AlbumArtistsController,
+  ],
   providers: [AlbumsService],
 })
 export class AlbumsModule {}

@@ -1,22 +1,20 @@
 import {
-  IsNumber,
+  IsArray,
+  IsDate,
+  IsDateString,
+  IsEnum,
   IsObject,
   IsOptional,
-  IsPositive,
   IsString,
   MaxLength,
-  Min,
   MinLength,
 } from 'class-validator';
+import { AlbumTypeEnum } from '../enums/album-type.enum';
 
-export class CreateTrackDto {
+export class CreateAlbumDto {
   @IsString()
-  album: string;
-
-  @IsNumber()
-  @IsPositive()
-  @Min(1)
-  duration_ms: number;
+  @IsEnum(AlbumTypeEnum)
+  album_type: AlbumTypeEnum;
 
   @IsObject()
   @IsOptional()
@@ -28,4 +26,7 @@ export class CreateTrackDto {
   @MinLength(3)
   @MaxLength(30)
   name: string;
+
+  @IsDateString()
+  release_date: Date;
 }

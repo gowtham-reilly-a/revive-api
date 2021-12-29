@@ -14,6 +14,7 @@ export class Track {
   @Prop({
     type: String,
     ref: 'Album',
+    required: true,
   })
   album: string;
 
@@ -21,7 +22,7 @@ export class Track {
     type: [String],
     ref: 'Artist',
   })
-  artists: string[];
+  artists?: string[];
 
   @Prop({
     type: Number,
@@ -45,9 +46,10 @@ export class Track {
 
   @Prop({
     type: String,
-    required: true,
+    default:
+      'https://res.cloudinary.com/gowthamreilly/image/upload/v1640692988/track/default_nxqrq8.jpg',
   })
-  image: string;
+  image?: string;
 
   @Prop({
     type: String,
@@ -63,7 +65,6 @@ export class Track {
 
   @Prop({
     type: String,
-    required: true,
   })
   uri: string;
 }

@@ -45,7 +45,8 @@ export class Album {
 
   @Prop({
     type: String,
-    required: true,
+    default:
+      'https://res.cloudinary.com/gowthamreilly/image/upload/v1640685332/album/default_lr0esl.jpg',
   })
   image: string;
 
@@ -62,7 +63,7 @@ export class Album {
   release_date: Date;
 
   @Prop({
-    type: String,
+    type: [String],
     ref: 'Track',
   })
   tracks: string[];
@@ -75,13 +76,12 @@ export class Album {
 
   @Prop({
     type: String,
-    required: true,
   })
   uri: string;
 }
 
 export const AlbumSchema = SchemaFactory.createForClass(Album);
 
-AlbumSchema.virtual('total_tracks').get(function () {
-  return this.tracks.length;
+AlbumSchema.virtual('total_tracks').get(function (this) {
+  return this.tracks?.length;
 });

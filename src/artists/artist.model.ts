@@ -12,12 +12,6 @@ export type ArtistDocument = Artist & Document;
 })
 export class Artist {
   @Prop({
-    type: String,
-    ref: 'User',
-  })
-  belongs_to: string;
-
-  @Prop({
     type: Map,
     of: String,
   })
@@ -33,22 +27,24 @@ export class Artist {
 
   @Prop({
     type: String,
-    required: true,
+    default:
+      'https://res.cloudinary.com/gowthamreilly/image/upload/v1640693120/artist/default_ocqigk.jpg',
   })
-  image: string;
+  image?: string;
 
   @Prop({
     type: String,
     required: true,
+    trim: true,
   })
   name: string;
 
   @Prop({
-    type: String,
+    type: [String],
     ref: 'User',
     select: false,
   })
-  team: string[];
+  members?: string[];
 
   @Prop({
     type: String,
@@ -58,9 +54,8 @@ export class Artist {
 
   @Prop({
     type: String,
-    required: true,
   })
-  uri: string;
+  uri?: string;
 }
 
 export const ArtistSchema = SchemaFactory.createForClass(Artist);

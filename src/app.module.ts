@@ -17,6 +17,7 @@ import { AlbumsModule } from './albums/albums.module';
 import { TracksModule } from './tracks/tracks.module';
 import { CaslModule } from './casl/casl.module';
 import { PermissionsModule } from './permissions/permissions.module';
+import { CloudinaryModule } from './cloudinary/cloudinary.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { PermissionsModule } from './permissions/permissions.module';
     AlbumsModule,
     TracksModule,
     PermissionsModule,
+    CloudinaryModule,
   ],
   controllers: [AppController],
   providers: [

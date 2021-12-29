@@ -4,8 +4,10 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { createReadStream } from 'fs';
 import { Model } from 'mongoose';
 import { CaslAbilityFactory } from 'src/casl/casl-ability.factory';
+import { CloudinaryFactory } from 'src/cloudinary/cloudinary-factory';
 import { ActionEnum } from 'src/global/enums/action.enum';
 import { SubjectEnum } from 'src/global/enums/subject.enum';
 import { UserDocument } from 'src/users/user.model';
@@ -18,9 +20,13 @@ export class ArtistsService {
   constructor(
     @InjectModel(Artist.name) private artistsModel: Model<ArtistDocument>,
     private caslAbilityFactory: CaslAbilityFactory,
+    private cloudinaryFactory: CloudinaryFactory,
   ) {}
 
-  async create(currentUser: UserDocument, createArtistDto: CreateArtistDto) {
+  async createArtist(
+    currentUser: UserDocument,
+    createArtistDto: CreateArtistDto,
+  ) {
     const ability = this.caslAbilityFactory.getAblility(
       currentUser.permission.rules,
     );
@@ -87,6 +93,47 @@ export class ArtistsService {
       );
 
     return artist.update(updateUserDto, { new: true });
+  }
+
+  async updateArtistImage(
+    currentUser: UserDocument,
+    id: string,
+    image: Express.Multer.File,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Artist))
+      throw new UnauthorizedException(
+        "You don't have permission to update an artist",
+      );
+
+    const artist = await this.artistsModel.findById(id);
+
+    if (!artist) throw new NotFoundException('Artist not found');
+
+    if (ability.cannot(ActionEnum.Update, artist))
+      throw new UnauthorizedException(
+        "You don't have permission to update this artist",
+      );
+
+    const { secure_url } = await this.cloudinaryFactory.uploadStream(
+      image.buffer,
+      {
+        folder: 'artist',
+        resource_type: 'image',
+        public_id: artist.id,
+        overwrite: true,
+        format: image.mimetype.split('/')[1],
+      },
+    );
+
+    return this.artistsModel.findByIdAndUpdate(
+      id,
+      { image: secure_url },
+      { new: true },
+    );
   }
 
   async deleteArtist(currentUser: UserDocument, id: string) {

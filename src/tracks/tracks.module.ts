@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CaslModule } from 'src/casl/casl.module';
+import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { TrackArtistsController } from './track-artists.controller';
 import { Track, TrackDocument, TrackSchema } from './track.model';
 import { TracksController } from './tracks.controller';
 import { TracksService } from './tracks.service';
@@ -30,8 +33,10 @@ import { TracksService } from './tracks.service';
         },
       },
     ]),
+    CaslModule,
+    CloudinaryModule,
   ],
-  controllers: [TracksController],
+  controllers: [TracksController, TrackArtistsController],
   providers: [TracksService],
 })
 export class TracksModule {}

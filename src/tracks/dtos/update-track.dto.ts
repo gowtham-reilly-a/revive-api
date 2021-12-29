@@ -1,32 +1,34 @@
 import {
-  IsArray,
-  IsDate,
+  IsNumber,
+  IsObject,
   IsOptional,
+  IsPositive,
   IsString,
   MaxLength,
+  Min,
   MinLength,
 } from 'class-validator';
 
 export class UpdateTrackDto {
   @IsString()
+  @IsOptional()
+  album: string;
+
+  @IsNumber()
+  @IsPositive()
+  @Min(1)
+  @IsOptional()
+  duration_ms: number;
+
+  @IsObject()
+  @IsOptional()
+  external_urls?: {
+    [key: string]: string;
+  };
+
+  @IsString()
   @MinLength(3)
-  @MaxLength(20)
+  @MaxLength(30)
   @IsOptional()
-  title?: string;
-
-  @IsArray()
-  @IsOptional()
-  artists?: string[];
-
-  @IsDate()
-  @IsOptional()
-  releasedAt?: Date;
-
-  @IsString()
-  @IsOptional()
-  tag?: string;
-
-  @IsString()
-  @IsOptional()
-  coverImage?: string;
+  name: string;
 }
