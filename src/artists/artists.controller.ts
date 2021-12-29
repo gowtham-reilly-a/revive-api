@@ -38,9 +38,13 @@ export class ArtistsController {
   @Get()
   getSeveralArtists(
     @CurrentUser() currentUser: UserDocument,
-    @Query('ids') ids: string,
+    @Query() query: { [key: string]: string },
   ) {
-    return this.artistsService.getSeveralArtists(currentUser, ids);
+    const { ids, ...listQuery } = query;
+
+    if (ids) return this.artistsService.getSeveralArtists(currentUser, ids);
+
+    return this.artistsService.listArtists(currentUser, listQuery);
   }
 
   @Patch(':id')

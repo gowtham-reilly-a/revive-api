@@ -16,7 +16,6 @@ import { UserDocument } from 'src/users/user.model';
 import { CreateAlbumDto } from './dtos/create-album.dto';
 import { UpdateAlbumDto } from './dtos/update-album.dto';
 import { AlbumsService } from './albums.service';
-import { Public } from 'src/global/decorators/public.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('albums')
@@ -28,7 +27,6 @@ export class AlbumsController {
     @CurrentUser() currentUser: UserDocument,
     @Body() createAlbumDto: CreateAlbumDto,
   ) {
-    console.log(createAlbumDto);
     return this.albumsService.createAlbum(currentUser, createAlbumDto);
   }
 
@@ -40,9 +38,13 @@ export class AlbumsController {
   @Get()
   getSeveralAlbums(
     @CurrentUser() currentUser: UserDocument,
-    @Query('ids') ids: string,
+    @Query() query: { [key: string]: string },
   ) {
-    return this.albumsService.getSeveralAlbums(currentUser, ids);
+    const { ids, ...listQuery } = query;
+
+    if (ids) return this.albumsService.getSeveralAlbums(currentUser, ids);
+
+    return this.albumsService.listAlbums(currentUser, listQuery);
   }
 
   @Patch(':id')

@@ -11,6 +11,7 @@ import { CloudinaryFactory } from 'src/cloudinary/cloudinary-factory';
 import { ActionEnum } from 'src/global/enums/action.enum';
 import { SubjectEnum } from 'src/global/enums/subject.enum';
 import { UserDocument } from 'src/users/user.model';
+import { useQueryFeatures } from 'src/utils/useQueryFeatures';
 import { CreateTrackDto } from './dtos/create-track.dto';
 import { UpdateTrackDto } from './dtos/update-track.dto';
 import { Track, TrackDocument } from './track.model';
@@ -42,10 +43,9 @@ export class TracksService {
     if (ability.cannot(ActionEnum.Read, SubjectEnum.Track))
       throw new UnauthorizedException('You are not allowed to read a track');
 
-    const track = await this.trackModel.findById(id);
+    const track = await this.trackModel.findById(id).populate('artists');
 
-    if (ability.cannot(ActionEnum.Read, track))
-      throw new UnauthorizedException('You are not allowed to read this track');
+    if (!track) throw new NotFoundException('Track not found');
 
     return track;
   }
@@ -58,22 +58,31 @@ export class TracksService {
     if (ability.cannot(ActionEnum.Read, SubjectEnum.Track))
       throw new UnauthorizedException('You are not allowed to read a track');
 
+    if (!query) throw new BadRequestException('No query provided');
+
     const ids = query.split(',');
 
     if (ids.length > 50) throw new BadRequestException('App limit exceeded');
 
-    const tracks = await this.trackModel.find().where('id').in(ids).exec();
+    return await this.trackModel
+      .find({ _id: { $in: ids } })
+      .populate('artists');
+  }
 
-    const allowedToRead = tracks.filter((track) =>
-      ability.can(ActionEnum.Read, track),
+  async listTracks(
+    currentUser: UserDocument,
+    query: { [key: string]: string },
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
     );
 
-    if (!allowedToRead.length)
-      throw new UnauthorizedException(
-        'You are not allowed to read these tracks',
-      );
+    if (ability.cannot(ActionEnum.Read, SubjectEnum.Track))
+      throw new UnauthorizedException('You are not allowed to read a track');
 
-    return allowedToRead;
+    const { query: q } = await useQueryFeatures(this.trackModel, query);
+
+    return await q.populate('artists');
   }
 
   async updateTrack(
@@ -92,12 +101,11 @@ export class TracksService {
 
     if (!track) throw new NotFoundException('Track not found');
 
-    if (ability.cannot(ActionEnum.Update, track))
-      throw new UnauthorizedException(
-        'You are not allowed to update this track',
-      );
-
-    return await track.update(updateTrackDto);
+    return await this.trackModel
+      .findByIdAndUpdate(track.id, updateTrackDto, {
+        new: true,
+      })
+      .populate('artists');
   }
 
   async updateTrackImage(
@@ -118,11 +126,6 @@ export class TracksService {
 
     if (!track) throw new NotFoundException('Track not found');
 
-    if (ability.cannot(ActionEnum.Update, track))
-      throw new UnauthorizedException(
-        "You don't have permission to update this track",
-      );
-
     const { secure_url } = await this.cloudinaryFactory.uploadStream(
       image.buffer,
       {
@@ -134,11 +137,9 @@ export class TracksService {
       },
     );
 
-    return this.trackModel.findByIdAndUpdate(
-      id,
-      { image: secure_url },
-      { new: true },
-    );
+    return this.trackModel
+      .findByIdAndUpdate(track.id, { image: secure_url }, { new: true })
+      .populate('artists');
   }
 
   async deleteTrack(currentUser: UserDocument, id: string) {
@@ -151,12 +152,9 @@ export class TracksService {
 
     const track = await this.trackModel.findById(id);
 
-    if (ability.cannot(ActionEnum.Delete, track))
-      throw new UnauthorizedException(
-        'You are not allowed to delete this track',
-      );
+    if (!track) throw new NotFoundException('Track not found');
 
-    return await track.delete();
+    return await track.deleteOne();
   }
 
   async deleteSeveralTracks(currentUser: UserDocument, query: string) {
@@ -167,25 +165,68 @@ export class TracksService {
     if (ability.cannot(ActionEnum.Delete, SubjectEnum.Track))
       throw new UnauthorizedException('You are not allowed to delete a track');
 
+    if (!query) throw new BadRequestException('Provide ids in query');
+
     const ids = query.split(',');
 
-    if (ids.length > 50) throw new BadRequestException('App limit exceeded');
+    if (ids.length > 20) throw new BadRequestException('App limit exceeded');
 
-    const tracks = await this.trackModel.find().where('id').in(ids).exec();
+    const tracks = await this.trackModel
+      .find({ _id: { $in: ids } })
+      .select('_id');
 
-    const allowedToDelete: TrackDocument[] = tracks.filter(
-      (track: TrackDocument): boolean => ability.can(ActionEnum.Delete, track),
+    return await this.trackModel.deleteMany({
+      _id: { $in: tracks.map((track) => track.id) },
+    });
+  }
+
+  async addArtistToTrack(
+    currentUser: UserDocument,
+    trackId: string,
+    artistId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
     );
 
-    if (!allowedToDelete.length)
-      throw new UnauthorizedException(
-        'You are not allowed to delete these tracks',
-      );
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Track))
+      throw new UnauthorizedException('You are not allowed to update a track');
 
-    return await this.trackModel
-      .findByIdAndDelete()
-      .where('id')
-      .in(allowedToDelete.map((track) => track.id))
-      .exec();
+    const track = await this.trackModel.findById(trackId);
+
+    const isExist = track.artists.some((artist) => artist === artistId);
+
+    if (isExist) throw new BadRequestException('Artist already exist');
+
+    track.artists.push(artistId);
+
+    await track.save();
+
+    return track.populate('artists');
+  }
+
+  async removeArtistFromTrack(
+    currentUser: UserDocument,
+    trackId: string,
+    artistId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Track))
+      throw new UnauthorizedException('You are not allowed to update a track');
+
+    const track = await this.trackModel.findById(trackId);
+
+    const isExist = track.artists.some((artist) => artist === artistId);
+    if (!isExist)
+      throw new NotFoundException('Artist does not exist on this track');
+
+    const artists = track.artists.filter((artist) => artist !== artistId);
+
+    track.artists = artists;
+
+    return await track.save();
   }
 }

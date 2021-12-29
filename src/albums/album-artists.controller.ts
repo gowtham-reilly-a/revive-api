@@ -1,46 +1,32 @@
-import { Controller, Post, Get, Put, Delete, Param } from '@nestjs/common';
+import { Controller, Post, Delete, Param, Body } from '@nestjs/common';
+import { CurrentUser } from 'src/global/decorators/current-user.decorator';
+import { UserDocument } from 'src/users/user.model';
+import { AlbumsService } from './albums.service';
+import { AddAlbumArtistDto } from './dtos/add-album-artist.dto';
 
 @Controller('albums/:album_id/artists')
 export class AlbumArtistsController {
+  constructor(private albumsService: AlbumsService) {}
+
   @Post()
-  addArtistsToAlbum(@Param('album_id') albumId: string) {
-    console.log(albumId);
-    return 'Album artists';
-  }
-
-  @Get()
-  getSeveralArtistsOfAlbum(@Param('album_id') albumId: string) {
-    console.log(albumId);
-    return 'Album artists';
-  }
-
-  @Get()
-  listArtistsOfAlbum(@Param('album_id') albumId: string) {
-    console.log(albumId);
-    return 'Album artists';
-  }
-
-  @Get(':artist_id')
-  getArtistOfAlbum(
+  addArtistToAlbum(
+    @CurrentUser() currentUser: UserDocument,
     @Param('album_id') albumId: string,
-    @Param('artist_id') artistId: string,
+    @Body() { artistId }: AddAlbumArtistDto,
   ) {
-    console.log({ albumId, artistId });
-    return 'Album artists';
-  }
-
-  @Put()
-  updateArtistsOfAlbum(@Param('album_id') albumId: string) {
-    console.log(albumId);
-    return 'Album artists';
+    return this.albumsService.addArtistToAlbum(currentUser, albumId, artistId);
   }
 
   @Delete(':artist_id')
-  deleteArtistOfAlbum(
+  removeArtistFromAlbum(
+    @CurrentUser() currentUser: UserDocument,
     @Param('album_id') albumId: string,
     @Param('artist_id') artistId: string,
   ) {
-    console.log({ albumId, artistId });
-    return 'Album artists';
+    return this.albumsService.removeArtistFromAlbum(
+      currentUser,
+      albumId,
+      artistId,
+    );
   }
 }

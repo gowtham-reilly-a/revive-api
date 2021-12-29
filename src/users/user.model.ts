@@ -16,13 +16,6 @@ export type UserDocument = User &
 })
 export class User {
   @Prop({
-    type: [String],
-    ref: 'Artist',
-    select: false,
-  })
-  artist_teams: string[];
-
-  @Prop({
     type: String,
   })
   display_name?: string;

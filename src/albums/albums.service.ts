@@ -14,6 +14,7 @@ import { CreateAlbumDto } from './dtos/create-album.dto';
 import { UpdateAlbumDto } from './dtos/update-album.dto';
 import { Album, AlbumDocument } from './album.model';
 import { CloudinaryFactory } from 'src/cloudinary/cloudinary-factory';
+import { useQueryFeatures } from 'src/utils/useQueryFeatures';
 
 @Injectable()
 export class AlbumsService {
@@ -31,7 +32,17 @@ export class AlbumsService {
     if (ability.cannot(ActionEnum.Create, SubjectEnum.Album))
       throw new UnauthorizedException('You are not allowed to create a album');
 
-    return await this.albumModel.create(createAlbumDto);
+    const album = await this.albumModel.create(createAlbumDto);
+
+    return album.populate([
+      {
+        path: 'tracks',
+        populate: { path: 'artists' },
+      },
+      {
+        path: 'artists',
+      },
+    ]);
   }
 
   async getAlbum(currentUser: UserDocument, id: string) {
@@ -44,10 +55,17 @@ export class AlbumsService {
 
     const album = await this.albumModel.findById(id);
 
-    if (ability.cannot(ActionEnum.Read, album))
-      throw new UnauthorizedException('You are not allowed to read this album');
+    if (!album) throw new NotFoundException('Album not found');
 
-    return album;
+    return album.populate([
+      {
+        path: 'tracks',
+        populate: { path: 'artists' },
+      },
+      {
+        path: 'artists',
+      },
+    ]);
   }
 
   async getSeveralAlbums(currentUser: UserDocument, query: string) {
@@ -58,22 +76,50 @@ export class AlbumsService {
     if (ability.cannot(ActionEnum.Read, SubjectEnum.Album))
       throw new UnauthorizedException('You are not allowed to read a album');
 
+    if (!query) throw new BadRequestException('Provide ids in query');
+
     const ids = query.split(',');
 
     if (ids.length > 50) throw new BadRequestException('App limit exceeded');
 
-    const albums = await this.albumModel.find().where('id').in(ids).exec();
+    return this.albumModel
+      .find()
+      .where('_id')
+      .in(ids)
+      .populate([
+        {
+          path: 'tracks',
+          populate: { path: 'artists' },
+        },
+        {
+          path: 'artists',
+        },
+      ])
+      .exec();
+  }
 
-    const allowedToRead = albums.filter((album) =>
-      ability.can(ActionEnum.Read, album),
+  async listAlbums(
+    currentUser: UserDocument,
+    query: { [key: string]: string },
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
     );
 
-    if (!allowedToRead.length)
-      throw new UnauthorizedException(
-        'You are not allowed to read these albums',
-      );
+    if (ability.cannot(ActionEnum.Read, SubjectEnum.Album))
+      throw new UnauthorizedException('You are not allowed to read a album');
 
-    return allowedToRead;
+    const { query: q } = await useQueryFeatures(this.albumModel, query);
+
+    return await q.populate([
+      {
+        path: 'tracks',
+        populate: { path: 'artists' },
+      },
+      {
+        path: 'artists',
+      },
+    ]);
   }
 
   async updateAlbum(
@@ -92,14 +138,19 @@ export class AlbumsService {
 
     if (!album) throw new NotFoundException('Album not found');
 
-    if (ability.cannot(ActionEnum.Update, album))
-      throw new UnauthorizedException(
-        'You are not allowed to update this album',
-      );
-
-    return await this.albumModel.findByIdAndUpdate(album.id, updateAlbumDto, {
-      new: true,
-    });
+    return await this.albumModel
+      .findByIdAndUpdate(album.id, updateAlbumDto, {
+        new: true,
+      })
+      .populate([
+        {
+          path: 'tracks',
+          populate: { path: 'artists' },
+        },
+        {
+          path: 'artists',
+        },
+      ]);
   }
 
   async updateAlbumImage(
@@ -120,11 +171,6 @@ export class AlbumsService {
 
     if (!album) throw new NotFoundException('Album not found');
 
-    if (ability.cannot(ActionEnum.Update, album))
-      throw new UnauthorizedException(
-        "You don't have permission to update this album",
-      );
-
     const { secure_url } = await this.cloudinaryFactory.uploadStream(
       image.buffer,
       {
@@ -136,11 +182,17 @@ export class AlbumsService {
       },
     );
 
-    return this.albumModel.findByIdAndUpdate(
-      id,
-      { image: secure_url },
-      { new: true },
-    );
+    return this.albumModel
+      .findByIdAndUpdate(id, { image: secure_url }, { new: true })
+      .populate([
+        {
+          path: 'tracks',
+          populate: { path: 'artists' },
+        },
+        {
+          path: 'artists',
+        },
+      ]);
   }
 
   async deleteAlbum(currentUser: UserDocument, id: string) {
@@ -153,11 +205,6 @@ export class AlbumsService {
 
     const album = await this.albumModel.findById(id);
 
-    if (ability.cannot(ActionEnum.Delete, album))
-      throw new UnauthorizedException(
-        'You are not allowed to delete this album',
-      );
-
     return await album.deleteOne();
   }
 
@@ -169,25 +216,128 @@ export class AlbumsService {
     if (ability.cannot(ActionEnum.Delete, SubjectEnum.Album))
       throw new UnauthorizedException('You are not allowed to delete a album');
 
+    if (!query) throw new BadRequestException('Provide ids in query');
+
     const ids = query.split(',');
 
-    if (ids.length > 50) throw new BadRequestException('App limit exceeded');
+    if (ids.length > 20) throw new BadRequestException('App limit exceeded');
 
-    const albums = await this.albumModel.find().where('id').in(ids).exec();
+    return this.albumModel.deleteMany().where('_id').in(ids).exec();
+  }
 
-    const allowedToDelete: AlbumDocument[] = albums.filter(
-      (album: AlbumDocument): boolean => ability.can(ActionEnum.Delete, album),
+  async addArtistToAlbum(
+    currentUser: UserDocument,
+    albumId: string,
+    artistId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
     );
 
-    if (!allowedToDelete.length)
-      throw new UnauthorizedException(
-        'You are not allowed to delete these albums',
-      );
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Album))
+      throw new UnauthorizedException('You are not allowed to update a album');
 
-    return await this.albumModel
-      .findByIdAndDelete()
-      .where('id')
-      .in(allowedToDelete.map((album) => album.id))
-      .exec();
+    const album = await this.albumModel.findById(albumId);
+
+    const isExist = album.artists.some((artist) => artist === artistId);
+
+    if (isExist) throw new BadRequestException('Artist already exist');
+
+    album.artists.push(artistId);
+
+    await album.save();
+
+    return album.populate([
+      {
+        path: 'tracks',
+        populate: { path: 'artists' },
+      },
+      {
+        path: 'artists',
+      },
+    ]);
+  }
+
+  async removeArtistFromAlbum(
+    currentUser: UserDocument,
+    albumId: string,
+    artistId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Album))
+      throw new UnauthorizedException('You are not allowed to update a album');
+
+    const album = await this.albumModel.findById(albumId);
+
+    const isExist = album.artists.some((artist) => artist === artistId);
+    if (!isExist)
+      throw new NotFoundException('Artist does not exist on this album');
+
+    const artists = album.artists.filter((artist) => artist !== artistId);
+
+    album.artists = artists;
+
+    return await album.save();
+  }
+
+  async addTrackToAlbum(
+    currentUser: UserDocument,
+    albumId: string,
+    trackId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Album))
+      throw new UnauthorizedException('You are not allowed to update a album');
+
+    const album = await this.albumModel.findById(albumId);
+
+    const isExist = album.tracks.some((track) => track === trackId);
+
+    if (isExist) throw new BadRequestException('Track already exist');
+
+    album.tracks.push(trackId);
+
+    await album.save();
+
+    return album.populate([
+      {
+        path: 'tracks',
+        populate: { path: 'artists' },
+      },
+      {
+        path: 'artists',
+      },
+    ]);
+  }
+
+  async removeTrackFromAlbum(
+    currentUser: UserDocument,
+    albumId: string,
+    trackId: string,
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Update, SubjectEnum.Album))
+      throw new UnauthorizedException('You are not allowed to update a album');
+
+    const album = await this.albumModel.findById(albumId);
+
+    const isExist = album.tracks.some((track) => track === trackId);
+    if (!isExist)
+      throw new NotFoundException('Track does not exist on this album');
+
+    const tracks = album.tracks.filter((track) => track !== trackId);
+
+    album.tracks = tracks;
+
+    return await album.save();
   }
 }

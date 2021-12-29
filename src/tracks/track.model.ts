@@ -12,13 +12,6 @@ export type TrackDocument = Track & Document;
 })
 export class Track {
   @Prop({
-    type: String,
-    ref: 'Album',
-    required: true,
-  })
-  album: string;
-
-  @Prop({
     type: [String],
     ref: 'Artist',
   })

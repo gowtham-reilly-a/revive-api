@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsNumber,
   IsObject,
   IsOptional,
@@ -10,8 +11,10 @@ import {
 } from 'class-validator';
 
 export class CreateTrackDto {
-  @IsString()
-  album: string;
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  artists?: string[];
 
   @IsNumber()
   @IsPositive()

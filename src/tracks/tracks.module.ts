@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ArtistsModule } from 'src/artists/artists.module';
 import { CaslModule } from 'src/casl/casl.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
 import { TrackArtistsController } from './track-artists.controller';
@@ -16,16 +17,10 @@ import { TracksService } from './tracks.service';
         name: Track.name,
         useFactory(configService: ConfigService) {
           const schema = TrackSchema;
-          const appRootURL = configService.get<string>('APP_ROOT_URL');
           const appName = configService.get<string>('APP_NAME').toLowerCase();
 
           schema.pre('save', function (this: TrackDocument, next) {
             this.uri = `${appName}:track:${this.id}`;
-            this.set(
-              `external_urls.${appName}`,
-              `${appRootURL}/track/${this.id}`,
-            );
-
             next();
           });
 
@@ -35,8 +30,10 @@ import { TracksService } from './tracks.service';
     ]),
     CaslModule,
     CloudinaryModule,
+    ArtistsModule,
   ],
   controllers: [TracksController, TrackArtistsController],
   providers: [TracksService],
+  exports: [TracksService],
 })
 export class TracksModule {}

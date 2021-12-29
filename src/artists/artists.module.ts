@@ -49,5 +49,6 @@ import { ArtistsService } from './artists.service';
   ],
   controllers: [ArtistsController, ArtistMembersController],
   providers: [ArtistsService],
+  exports: [ArtistsService],
 })
 export class ArtistsModule {}

@@ -1,4 +1,5 @@
 import {
+  IsArray,
   IsNumber,
   IsObject,
   IsOptional,
@@ -10,15 +11,16 @@ import {
 } from 'class-validator';
 
 export class UpdateTrackDto {
-  @IsString()
+  @IsArray()
+  @IsString({ each: true })
   @IsOptional()
-  album: string;
+  artists?: string[];
 
   @IsNumber()
   @IsPositive()
   @Min(1)
   @IsOptional()
-  duration_ms: number;
+  duration_ms?: number;
 
   @IsObject()
   @IsOptional()
@@ -30,5 +32,5 @@ export class UpdateTrackDto {
   @MinLength(3)
   @MaxLength(30)
   @IsOptional()
-  name: string;
+  name?: string;
 }

@@ -15,11 +15,7 @@ export class Album {
   @Prop({
     type: String,
     required: true,
-    enum: [
-      AlbumTypeEnum.Album,
-      AlbumTypeEnum.Compilation,
-      AlbumTypeEnum.Single,
-    ],
+    enum: Object.values(AlbumTypeEnum),
   })
   album_type: AlbumTypeEnum;
 

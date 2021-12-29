@@ -15,7 +15,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { CurrentUser } from 'src/global/decorators/current-user.decorator';
 import { UserDocument } from 'src/users/user.model';
 import { CreateTrackDto } from './dtos/create-track.dto';
-import { UpdateTrackArtistsDto } from './dtos/update-track-artists.dto';
 import { UpdateTrackDto } from './dtos/update-track.dto';
 import { TracksService } from './tracks.service';
 
@@ -39,9 +38,13 @@ export class TracksController {
   @Get()
   getSeveralTracks(
     @CurrentUser() currentUser: UserDocument,
-    @Query('ids') ids: string,
+    @Query() query: { [key: string]: string },
   ) {
-    return this.tracksService.getSeveralTracks(currentUser, ids);
+    const { ids, ...listQuery } = query;
+
+    if (ids) return this.tracksService.getSeveralTracks(currentUser, ids);
+
+    return this.tracksService.listTracks(currentUser, listQuery);
   }
 
   @Patch(':id')

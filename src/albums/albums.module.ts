@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { CaslModule } from 'src/casl/casl.module';
 import { CloudinaryModule } from 'src/cloudinary/cloudinary.module';
+import { TracksModule } from 'src/tracks/tracks.module';
 import { AlbumArtistsController } from './album-artists.controller';
 import { AlbumTracksController } from './album-tracks.controller';
 import { Album, AlbumDocument, AlbumSchema } from './album.model';
@@ -30,6 +31,7 @@ import { AlbumsService } from './albums.service';
     ]),
     CaslModule,
     CloudinaryModule,
+    TracksModule,
   ],
   controllers: [
     AlbumsController,

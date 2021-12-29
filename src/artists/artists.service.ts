@@ -1,16 +1,17 @@
 import {
+  BadRequestException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { createReadStream } from 'fs';
 import { Model } from 'mongoose';
 import { CaslAbilityFactory } from 'src/casl/casl-ability.factory';
 import { CloudinaryFactory } from 'src/cloudinary/cloudinary-factory';
 import { ActionEnum } from 'src/global/enums/action.enum';
 import { SubjectEnum } from 'src/global/enums/subject.enum';
 import { UserDocument } from 'src/users/user.model';
+import { useQueryFeatures } from 'src/utils/useQueryFeatures';
 import { Artist, ArtistDocument } from './artist.model';
 import { CreateArtistDto } from './dtos/create-artist.dto';
 import { UpdateArtistDto } from './dtos/update-artist.dto';
@@ -18,7 +19,7 @@ import { UpdateArtistDto } from './dtos/update-artist.dto';
 @Injectable()
 export class ArtistsService {
   constructor(
-    @InjectModel(Artist.name) private artistsModel: Model<ArtistDocument>,
+    @InjectModel(Artist.name) private artistModel: Model<ArtistDocument>,
     private caslAbilityFactory: CaslAbilityFactory,
     private cloudinaryFactory: CloudinaryFactory,
   ) {}
@@ -36,7 +37,7 @@ export class ArtistsService {
         "You don't have permission to create an artist",
       );
 
-    return this.artistsModel.create(createArtistDto);
+    return await this.artistModel.create(createArtistDto);
   }
 
   async getArtist(currentUser: UserDocument, id: string) {
@@ -49,7 +50,11 @@ export class ArtistsService {
         "You don't have permission to view the artist",
       );
 
-    return this.artistsModel.findById(id);
+    const artist = await this.artistModel.findById(id);
+
+    if (!artist) throw new NotFoundException('Artist not found');
+
+    return artist;
   }
 
   async getSeveralArtists(currentUser: UserDocument, query: string) {
@@ -62,11 +67,31 @@ export class ArtistsService {
         "You don't have permission to view artists",
       );
 
-    const ids = query.split(',');
+    if (!query) throw new BadRequestException('Missing ids in query');
 
-    const artists = await this.artistsModel.find().where('id').in(ids).exec();
+    const ids = query?.split(',');
+    if (ids.length > 50)
+      throw new BadRequestException('Application limit exceeded');
 
-    return artists.filter((artist) => ability.can(ActionEnum.Read, artist));
+    return await this.artistModel.find({ _id: { $in: ids } });
+  }
+
+  async listArtists(
+    currentUser: UserDocument,
+    query: { [key: string]: string },
+  ) {
+    const ability = this.caslAbilityFactory.getAblility(
+      currentUser.permission.rules,
+    );
+
+    if (ability.cannot(ActionEnum.Read, SubjectEnum.Artist))
+      throw new UnauthorizedException(
+        "You don't have permission to view artists",
+      );
+
+    const { query: q } = await useQueryFeatures(this.artistModel, query);
+
+    return await q;
   }
 
   async updateArtist(
@@ -83,16 +108,13 @@ export class ArtistsService {
         "You don't have permission to update an artist",
       );
 
-    const artist = await this.artistsModel.findById(id);
+    const artist = await this.artistModel.findById(id);
 
     if (!artist) throw new NotFoundException('Artist not found');
 
-    if (ability.cannot(ActionEnum.Update, artist))
-      throw new UnauthorizedException(
-        "You don't have permission to update this artist",
-      );
-
-    return artist.update(updateUserDto, { new: true });
+    return await this.artistModel.findByIdAndUpdate(artist.id, updateUserDto, {
+      new: true,
+    });
   }
 
   async updateArtistImage(
@@ -109,14 +131,9 @@ export class ArtistsService {
         "You don't have permission to update an artist",
       );
 
-    const artist = await this.artistsModel.findById(id);
+    const artist = await this.artistModel.findById(id);
 
     if (!artist) throw new NotFoundException('Artist not found');
-
-    if (ability.cannot(ActionEnum.Update, artist))
-      throw new UnauthorizedException(
-        "You don't have permission to update this artist",
-      );
 
     const { secure_url } = await this.cloudinaryFactory.uploadStream(
       image.buffer,
@@ -129,8 +146,8 @@ export class ArtistsService {
       },
     );
 
-    return this.artistsModel.findByIdAndUpdate(
-      id,
+    return await this.artistModel.findByIdAndUpdate(
+      artist.id,
       { image: secure_url },
       { new: true },
     );
@@ -146,16 +163,11 @@ export class ArtistsService {
         "You don't have permission to delete an artist",
       );
 
-    const artist = await this.artistsModel.findById(id);
+    const artist = await this.artistModel.findById(id).select('_id');
 
     if (!artist) throw new NotFoundException('Artist not found');
 
-    if (ability.cannot(ActionEnum.Delete, artist))
-      throw new UnauthorizedException(
-        "You don't have permission to delete this artist",
-      );
-
-    return artist.delete();
+    return await this.artistModel.findByIdAndDelete(artist.id);
   }
 
   async deleteSeveralArtists(currentUser: UserDocument, query: string) {
@@ -168,25 +180,21 @@ export class ArtistsService {
         "You don't have permission to delete an artist",
       );
 
+    if (!query) throw new BadRequestException('Provide ids in query');
+
     const ids = query.split(',');
 
-    const artists = await this.artistsModel.find().where('id').in(ids).exec();
+    if (ids.length > 20)
+      throw new BadRequestException('Application limit exceeded');
+
+    const artists = await this.artistModel
+      .find({ _id: { $in: ids } })
+      .select('_id');
 
     if (!artists.length) throw new NotFoundException('Artists not found');
 
-    const allowedToDelete = artists.filter((artist) =>
-      ability.can(ActionEnum.Delete, artist),
-    );
-
-    if (!allowedToDelete.length)
-      throw new UnauthorizedException(
-        "You don't have permission to delete these artists",
-      );
-
-    return this.artistsModel
-      .deleteMany()
-      .where('id')
-      .in(allowedToDelete)
-      .exec();
+    return await this.artistModel.deleteMany({
+      _id: { $in: artists.map((artist) => artist.id) },
+    });
   }
 }
