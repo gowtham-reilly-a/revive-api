@@ -1,10 +1,10 @@
 {
   "name": "revive-api",
   "version": "0.0.1",
-  "description": "",
-  "author": "",
+  "description": "API for Revive app",
+  "author": "Gowtham Reilly",
   "private": true,
-  "license": "UNLICENSED",
+  "license": "MIT",
   "scripts": {
     "prebuild": "rimraf dist",
     "build": "NODE_ENV=production nest build",

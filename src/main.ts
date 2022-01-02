@@ -17,6 +17,7 @@ async function bootstrap() {
       app,
       new DocumentBuilder()
         .setTitle(configService.get('APP_NAME'))
+        .setDescription('Built by Gowtham Reilly')
         .setVersion('1.0')
         .build(),
     ),
